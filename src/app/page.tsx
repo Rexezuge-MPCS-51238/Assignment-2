@@ -10,6 +10,9 @@ export default function Home() {
   const [query, setQuery] = useState("");
 
   const featured = recipes.filter((r) => r.isFavorite).slice(0, 3);
+  const recent = [...recipes]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
   const results = query ? searchRecipes(query) : [];
 
   return (
@@ -63,6 +66,22 @@ export default function Home() {
           </div>
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((recipe) => (
+              <RecipeCard key={recipe.id} recipe={recipe} />
+            ))}
+          </div>
+
+          {/* Recently Added */}
+          <div className="mt-16 flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-zinc-900">Recently Added</h2>
+            <Link
+              href="/add"
+              className="text-sm font-medium text-amber-600 hover:text-amber-700"
+            >
+              Add new →
+            </Link>
+          </div>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {recent.map((recipe) => (
               <RecipeCard key={recipe.id} recipe={recipe} />
             ))}
           </div>
