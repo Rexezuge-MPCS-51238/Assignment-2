@@ -2,6 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRecipes } from "@/lib/recipe-context";
 
 export default function RecipeDetailPage({
@@ -10,7 +11,8 @@ export default function RecipeDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const { getRecipeBySlug, toggleFavorite } = useRecipes();
+  const { getRecipeBySlug, toggleFavorite, deleteRecipe } = useRecipes();
+  const router = useRouter();
   const recipe = getRecipeBySlug(slug);
 
   if (!recipe) {
@@ -30,6 +32,13 @@ export default function RecipeDetailPage({
       </div>
     );
   }
+
+  const totalTime = recipe.prepTime + recipe.cookTime;
+
+  const handleDelete = () => {
+    deleteRecipe(recipe.id);
+    router.push("/recipes");
+  };
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
@@ -52,36 +61,43 @@ export default function RecipeDetailPage({
             {recipe.description}
           </p>
         </div>
-        <button
-          onClick={() => toggleFavorite(recipe.id)}
-          className="mt-1 text-2xl transition-transform hover:scale-110"
-          aria-label={recipe.isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          {recipe.isFavorite ? "❤️" : "🤍"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => toggleFavorite(recipe.id)}
+            className="mt-1 text-2xl transition-transform hover:scale-110"
+            aria-label={recipe.isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            {recipe.isFavorite ? "❤️" : "🤍"}
+          </button>
+        </div>
       </div>
 
       {/* Tags */}
       <div className="mt-4 flex flex-wrap gap-2">
         {recipe.tags.map((tag) => (
-          <span
+          <Link
             key={tag}
-            className="rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700"
+            href={`/recipes?tag=${encodeURIComponent(tag)}`}
+            className="rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors"
           >
             {tag}
-          </span>
+          </Link>
         ))}
       </div>
 
       {/* Meta */}
-      <div className="mt-6 grid grid-cols-3 gap-4">
+      <div className="mt-6 grid grid-cols-4 gap-3">
         <div className="rounded-xl border border-amber-100 bg-white p-4 text-center">
           <p className="text-2xl font-bold text-amber-600">{recipe.prepTime}m</p>
-          <p className="text-xs text-zinc-500">Prep Time</p>
+          <p className="text-xs text-zinc-500">Prep</p>
         </div>
         <div className="rounded-xl border border-amber-100 bg-white p-4 text-center">
           <p className="text-2xl font-bold text-amber-600">{recipe.cookTime}m</p>
-          <p className="text-xs text-zinc-500">Cook Time</p>
+          <p className="text-xs text-zinc-500">Cook</p>
+        </div>
+        <div className="rounded-xl border border-amber-100 bg-white p-4 text-center">
+          <p className="text-2xl font-bold text-amber-600">{totalTime}m</p>
+          <p className="text-xs text-zinc-500">Total</p>
         </div>
         <div className="rounded-xl border border-amber-100 bg-white p-4 text-center">
           <p className="text-2xl font-bold text-amber-600">{recipe.servings}</p>
@@ -89,33 +105,51 @@ export default function RecipeDetailPage({
         </div>
       </div>
 
-      {/* Ingredients */}
-      <section className="mt-10">
-        <h2 className="text-xl font-bold text-zinc-900">Ingredients</h2>
-        <ul className="mt-4 space-y-2">
-          {recipe.ingredients.map((ingredient, i) => (
-            <li key={i} className="flex items-start gap-3 text-zinc-700">
-              <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
-              {ingredient}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_2fr]">
+        {/* Ingredients */}
+        <section>
+          <h2 className="text-xl font-bold text-zinc-900">Ingredients</h2>
+          <ul className="mt-4 space-y-2.5">
+            {recipe.ingredients.map((ingredient, i) => (
+              <li key={i} className="flex items-start gap-3 text-zinc-700">
+                <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
+                {ingredient}
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      {/* Steps */}
-      <section className="mt-10">
-        <h2 className="text-xl font-bold text-zinc-900">Instructions</h2>
-        <ol className="mt-4 space-y-4">
-          {recipe.steps.map((step, i) => (
-            <li key={i} className="flex gap-4">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700">
-                {i + 1}
-              </span>
-              <p className="pt-0.5 text-zinc-700 leading-relaxed">{step}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+        {/* Steps */}
+        <section>
+          <h2 className="text-xl font-bold text-zinc-900">Instructions</h2>
+          <ol className="mt-4 space-y-5">
+            {recipe.steps.map((step, i) => (
+              <li key={i} className="flex gap-4">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700">
+                  {i + 1}
+                </span>
+                <p className="pt-0.5 text-zinc-700 leading-relaxed">{step}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
+
+      {/* Actions */}
+      <div className="mt-12 flex items-center justify-between border-t border-amber-100 pt-6">
+        <Link
+          href="/recipes"
+          className="text-sm font-medium text-amber-600 hover:text-amber-700"
+        >
+          ← Back to recipes
+        </Link>
+        <button
+          onClick={handleDelete}
+          className="rounded-lg px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+        >
+          Delete Recipe
+        </button>
+      </div>
     </div>
   );
 }

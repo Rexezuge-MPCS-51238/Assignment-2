@@ -7,6 +7,7 @@ import { sampleRecipes } from "./sample-recipes";
 interface RecipeContextType {
   recipes: Recipe[];
   addRecipe: (recipe: Omit<Recipe, "id" | "slug" | "createdAt" | "isFavorite">) => void;
+  deleteRecipe: (id: string) => void;
   toggleFavorite: (id: string) => void;
   getRecipeBySlug: (slug: string) => Recipe | undefined;
   searchRecipes: (query: string) => Recipe[];
@@ -35,6 +36,10 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     setRecipes((prev) => [newRecipe, ...prev]);
+  };
+
+  const deleteRecipe = (id: string) => {
+    setRecipes((prev) => prev.filter((r) => r.id !== id));
   };
 
   const toggleFavorite = (id: string) => {
@@ -72,6 +77,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       value={{
         recipes,
         addRecipe,
+        deleteRecipe,
         toggleFavorite,
         getRecipeBySlug,
         searchRecipes,
